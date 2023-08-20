@@ -4,7 +4,7 @@ const fs = require("fs");
 const crypto = require("crypto");
 const { globSync } = require("glob");
 
-module.exports = async (data) => {
+module.exports = async () => {
   let baseUrl = process.env.SITE_BASE_URL || "";
   if (baseUrl && !baseUrl.startsWith("http")) {
     baseUrl = "https://" + baseUrl;
@@ -67,8 +67,7 @@ module.exports = async (data) => {
     baseTheme: process.env.BASE_THEME || "dark",
     siteName: process.env.SITE_NAME_HEADER || "Digital Garden",
     siteBaseUrl: baseUrl,
-    styleSettingsCss,
-    buildDate: new Date(),
+    styleSettingsCss
   };
 
   return meta;

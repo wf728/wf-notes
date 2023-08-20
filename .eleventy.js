@@ -2,7 +2,7 @@ const slugify = require("@sindresorhus/slugify");
 const markdownIt = require("markdown-it");
 const fs = require("fs");
 const matter = require("gray-matter");
-const faviconsPlugin = require("eleventy-plugin-gen-favicons");
+const faviconPlugin = require("eleventy-favicon");
 const tocPlugin = require("eleventy-plugin-nesting-toc");
 const { parse } = require("node-html-parser");
 const htmlMinifier = require("html-minifier");
@@ -13,9 +13,10 @@ const {
   userMarkdownSetup,
   userEleventySetup,
 } = require("./src/helpers/userSetup");
+const mathjax = require("markdown-it-mathjax3");
 
 const Image = require("@11ty/eleventy-img");
-function transformImage(src, cls, alt, sizes, widths = ["500", "1100", "auto"]) {
+function transformImage(src, cls, alt, sizes, widths = ["500", "700", "auto"]) {
   let options = {
     widths: widths,
     formats: ["webp", "jpeg"],
@@ -38,7 +39,6 @@ module.exports = function (eleventyConfig) {
   let markdownLib = markdownIt({
     breaks: true,
     html: true,
-    linkify: true,
   })
     .use(require("markdown-it-anchor"), {
       slugify: headerToId,
@@ -53,10 +53,23 @@ module.exports = function (eleventyConfig) {
     .use(require("markdown-it-mathjax3"), {
       tex: {
         inlineMath: [["$", "$"]],
+          // macros: {
+          //     R: "\\mathbb{R}"
+          // }
       },
       options: {
         skipHtmlTags: { "[-]": ["pre"] },
       },
+      startup: {
+        ready: () => {
+          console.log('hi mathjax');
+          mathjax.startup.defaultReaday();
+          mathjax.tex2chtml("$\\def\\R{\\mathbb{R}}$");
+          Startup.defaultReady();
+          require('markdown-it-mathjax3')().renderMath('$\\def\\R{\\mathbb{R}}$');
+          require('markdown-it')().use(require('markdown-it-mathjax3')()).render('$\\def\\R{\\mathbb{R}}$');
+        }
+      }
     })
     .use(require("markdown-it-attrs"))
     .use(require("markdown-it-task-checkbox"), {
@@ -91,55 +104,30 @@ module.exports = function (eleventyConfig) {
         }
         if (token.info.startsWith("ad-")) {
           const code = token.content.trim();
-          const parts = code.split("\n")
-          let titleLine;
-          let collapse;
-          let collapsible = false
-          let collapsed = true
-          let icon;
-          let color;
-          let nbLinesToSkip = 0
-          for (let i = 0; i<4; i++) {
-            if (parts[i] && parts[i].trim()) {
-              let line = parts[i] && parts[i].trim().toLowerCase()
-              if (line.startsWith("title:")) {
-                titleLine = line.substring(6);
-                nbLinesToSkip ++;
-              } else if (line.startsWith("icon:")) {
-                icon = line.substring(5);
-                nbLinesToSkip ++;
-              } else if (line.startsWith("collapse:")) {
-                collapsible = true
-                collapse = line.substring(9);
-                if (collapse && collapse.trim().toLowerCase() == 'open') {
-                  collapsed = false
-                }
-                nbLinesToSkip ++;
-              } else if (line.startsWith("color:")) {
-                color = line.substring(6);
-                nbLinesToSkip ++;
-              }
-            }
-          }
-          const foldDiv = collapsible ? `<div class="callout-fold">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-chevron-down">
-              <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-          </div>` : "";
-          const titleDiv = titleLine
-              ? `<div class="callout-title"><div class="callout-title-inner">${titleLine}</div>${foldDiv}</div>`
+          if (code && code.toLowerCase().startsWith("title:")) {
+            const title = code.substring(6, code.indexOf("\n"));
+            const titleDiv = title
+              ? `<div class="callout-title"><div class="callout-title-inner">${title}</div></div>`
               : "";
-          let collapseClasses = titleLine && collapsible ? 'is-collapsible' : ''
-          if (collapsible && collapsed) {
-            collapseClasses += " is-collapsed"
+
+            return `<div class="callout" data-callout="${
+              token.info
+            }">${titleDiv}\n<div class="callout-content">${md.render(
+              code.slice(code.indexOf("\n"))
+            )}</div></div>`;
           }
 
-          let res = `<div data-callout-metadata class="callout ${collapseClasses}" data-callout="${
-            token.info.substring(3)
-          }">${titleDiv}\n<div class="callout-content">${md.render(
-            parts.slice(nbLinesToSkip).join("\n")
+          const title = `<div class="callout-title"><div class="callout-title-inner">${token.info
+            .charAt(3)
+            .toUpperCase()}${token.info
+            .substring(4)
+            .toLowerCase()}</div></div>`;
+
+          return `<div class="callout" data-callout="${
+            token.info
+          }">${title}\n<div class="callout-content">${md.render(
+            code
           )}</div></div>`;
-          return res
         }
 
         // Other languages
@@ -195,11 +183,6 @@ module.exports = function (eleventyConfig) {
 
   eleventyConfig.setLibrary("md", markdownLib);
 
-  eleventyConfig.addFilter("isoDate", function (date) {
-    return date && date.toISOString();
-  });
-
-
   eleventyConfig.addFilter("link", function (str) {
     return (
       str &&
@@ -246,10 +229,9 @@ module.exports = function (eleventyConfig) {
           deadLink = true;
         }
 
-        if(deadLink){
-          return `<a class="internal-link is-unresolved" href="/404">${title}</a>`;
-        }
-        return `<a class="internal-link" data-note-icon="${noteIcon}" href="${permalink}${headerLinkPath}">${title}</a>`;
+        return `<a class="internal-link ${
+          deadLink ? "is-unresolved" : ""
+        }" ${deadLink ? "" : 'data-note-icon="' + noteIcon + '"'} href="${permalink}${headerLinkPath}">${title}</a>`;
       })
     );
   });
@@ -271,7 +253,6 @@ module.exports = function (eleventyConfig) {
         .map((m) => {
           return `"${m.split("#")[1]}"`;
         })
-        .join(", ");
     }
     if (tags) {
       return `${tags},`;
@@ -343,60 +324,47 @@ module.exports = function (eleventyConfig) {
     return str && parsed.innerHTML;
   });
 
-  function fillPictureSourceSets(src, cls, alt, meta, width, imageTag) {
-      imageTag.tagName = "picture";
-      let html = `<source
-      media="(max-width:480px)"
-      srcset="${meta.webp[0].url}"
-      type="image/webp"
-      />
-      <source
-      media="(max-width:480px)"
-      srcset="${meta.jpeg[0].url}"
-      />
-      `
-      if (meta.webp && meta.webp[1] && meta.webp[1].url) {
-        html += `<source
-        media="(max-width:1920px)"
-        srcset="${meta.webp[1].url}"
-        type="image/webp"
-        />`
-      }
-      if (meta.jpeg && meta.jpeg[1] && meta.jpeg[1].url) {
-        html += `<source
-        media="(max-width:1920px)"
-        srcset="${meta.jpeg[1].url}"
-        />`
-      }
-      html += `<img
-      class="${cls.toString()}"
-      src="${src}"
-      alt="${alt}"
-      width="${width}"
-      />`;
-      imageTag.innerHTML = html;
-    }
-    
-
   eleventyConfig.addTransform("picture", function (str) {
     const parsed = parse(str);
-    for (const imageTag of parsed.querySelectorAll(".cm-s-obsidian img")) {
-      const src = imageTag.getAttribute("src");
+    for (const t of parsed.querySelectorAll(".cm-s-obsidian img")) {
+      const src = t.getAttribute("src");
       if (src && src.startsWith("/") && !src.endsWith(".svg")) {
-        const cls = imageTag.classList.value;
-        const alt = imageTag.getAttribute("alt");
-        const width = imageTag.getAttribute("width") || '';
+        const cls = t.classList;
+        const alt = t.getAttribute("alt");
 
         try {
           const meta = transformImage(
-            "./src/site" + decodeURI(imageTag.getAttribute("src")),
+            "./src/site" + decodeURI(t.getAttribute("src")),
             cls.toString(),
             alt,
             ["(max-width: 480px)", "(max-width: 1024px)"]
           );
 
           if (meta) {
-            fillPictureSourceSets(src, cls, alt, meta, width, imageTag);
+            t.tagName = "picture";
+            t.innerHTML = `<source
+      media="(max-width:480px)"
+      srcset="${meta.webp[0].url}"
+      type="image/webp"
+    />
+    <source
+      media="(max-width:480px)"
+      srcset="${meta.jpeg[0].url}"
+    />
+    <source
+      media="(max-width:1920px)"
+      srcset="${meta.webp[1].url}"
+      type="image/webp"
+    />
+    <source
+      media="(max-width:1920px)"
+      srcset="${meta.jpeg[1].url}"
+    />
+    <img
+      class="${cls.toString()}"
+      src="${src}"
+      alt="${alt}"
+    />`;
           }
         } catch {
           // Make it fault tolarent.
@@ -420,12 +388,12 @@ module.exports = function (eleventyConfig) {
     )) {
       t.classList.add("dataview");
       t.classList.add("table-view-table");
-      t.querySelector("thead")?.classList.add("table-view-thead");
-      t.querySelector("tbody")?.classList.add("table-view-tbody");
-      t.querySelectorAll("thead > tr")?.forEach((tr) => {
+      t.querySelector("thead").classList.add("table-view-thead");
+      t.querySelector("tbody").classList.add("table-view-tbody");
+      t.querySelectorAll("thead > tr").forEach((tr) => {
         tr.classList.add("table-view-tr-header");
       });
-      t.querySelectorAll("thead > tr > th")?.forEach((th) => {
+      t.querySelectorAll("thead > tr > th").forEach((th) => {
         th.classList.add("table-view-th");
       });
     }
@@ -453,7 +421,7 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy("src/site/img");
   eleventyConfig.addPassthroughCopy("src/site/scripts");
   eleventyConfig.addPassthroughCopy("src/site/styles/_theme.*.css");
-  eleventyConfig.addPlugin(faviconsPlugin, { outputDir: "dist" });
+  eleventyConfig.addPlugin(faviconPlugin, { destination: "dist" });
   eleventyConfig.addPlugin(tocPlugin, {
     ul: true,
     tags: ["h1", "h2", "h3", "h4", "h5", "h6"],
@@ -487,6 +455,7 @@ module.exports = function (eleventyConfig) {
   userEleventySetup(eleventyConfig);
 
   return {
+    pathPrefix: "edav-garden",
     dir: {
       input: "src/site",
       output: "dist",
