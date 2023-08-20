@@ -1,6 +1,96 @@
-@import url(https://fonts.googleapis.com/css?family=Merriweather);
-body.theme-dark {--text-accent: hsl(169.74, 88.68%, 39.22%);}
-body {
+@import url(https://fonts.bunny.net/css?family=inter:100,200,300,400,500,600,700,800,900);
+
+// FG Grid
+$_fg_gutter: 24px; // gutter between columns. Set as desired.
+$_fg_padding: 0; // padding for column boxes. Set as desired, can override for individual columns.
+
+
+// *** Main mixin to create a per-row layout *** //
+@mixin _fg($colList, $gutter: $_fg_gutter, $padding: $_fg_padding) {
+  // If gutter/padding is unitless, give it px units:
+  @if unitless($gutter) {
+    $gutter: $gutter * 1px;
+  }
+  @if unitless($padding) {
+    $padding: $padding * 1px;
+  }
+
+  @if type-of($colList) == number { // call _fg_grid() directly
+    @include _fg_grid($colList, $gutter, $padding);
+  } @else if type-of($colList) == list and length($colList) > 1 {
+    // Count how many columns there are altogether
+    $columnCount: 0;
+    @each $i in $colList {
+      $columnCount: $columnCount + $i;
+    }
+
+    @include _fg_grid($columnCount, $gutter, $padding);
+
+    @for $i from 1 through length($colList) { // set child item widths using nth:child()
+      $c: nth($colList, $i);
+      & > :nth-child(#{length($colList)}n+#{$i}) {
+        @include _fg_width($c/$columnCount, $gutter);
+      }
+    }
+  }
+}
+
+
+// *** Set up grid with equal width columns *** //
+@mixin _fg_grid($cols: 0, $gutter: $_fg_gutter, $padding: $_fg_padding) {
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap;
+    margin-left: (-1 * $gutter);
+
+  > * {
+    @if $padding != 0 {
+      padding: $padding;
+    }
+    margin-left: $gutter;
+    box-sizing: border-box;
+  }
+
+  $calc_percent: (1/$cols) * 100%;
+
+  > * { width: calc(#{$calc_percent} - #{$gutter}); }
+}
+
+
+// *** width override for a column *** //
+@mixin _fg_width($ratio, $gutter: $_fg_gutter) {
+  @if unitless($gutter) {
+    $gutter: $gutter * 1px;
+  }
+
+  $calc_percent: $ratio * 100%;
+  width: calc(#{$calc_percent} - #{$gutter});
+};
+
+// Aaron's typography overrides **** //
+$base-font-size: 16px;
+$large-base-font-size: 18px;
+
+$base-line-height: 1.8rem;
+
+$accent-color: #12b886;
+
+// Major Third scale
+$h1-font-size: 2.074rem;
+$h2-font-size: 1.728rem;
+$h3-font-size: 1.44rem;
+$h4-font-size: 1.2rem;
+$h5-font-size: 1rem;
+$h6-font-size: 1rem;
+
+html { font-size: $base-font-size;
+  @media screen and (min-width: 900px) {
+    font-size: $large-base-font-size;
+  }
+}
+
+
+body.theme-dark {
     /***
       ADD YOUR CUSTOM STYLIING HERE. (INSIDE THE body {...} section.)
       IT WILL TAKE PRECEDENCE OVER THE STYLING IN THE STYLE.CSS FILE.
@@ -12,259 +102,275 @@ body {
     //  h1 {
     //   color: black;
     //  }
-    //--rmk-color: 255, 36, 36;
-    --impt-color: 255,221,87;
-    --tip-color: 0,209,178;
-    --todo-color: 138,43,226;
-  	--rmk-color: 219, 1, 1; /* 255,56,96; */
-	--qn-color: 251, 146, 76;/*255,120,15;*/
-	--ex-color: 79, 165, 79;/*35,209,96;*/
-	--oth-color: 82, 139, 212;/*32,156,238;*/
-    --ref-color: 159, 186, 223;
 
-    --content-font-size: 1.2rem;
-    .timestamps {
-        margin-top: 10px;
-    }
-    .backlink-list {
-        max-height: unset;
-    }
-    .content {
-        max-width: 900px;
-        font-size: var(--content-font-size);
-        --font-text-size: 1.4rem;
-    }
-    @media (min-width: 800px) {
-        .content {
-            padding-right: 90px;
-        }
-    }
-    @media (min-width: 1500px) {
-        .content.note-gallery {
-            max-width: 1200px;
-        }
-    }
+  // Normalize CSS
+  /*! normalize.css v8.0.1 | MIT License | github.com/necolas/normalize.css */
+  main{display:block}h1{font-size:2em;margin:.67em 0}hr{box-sizing:content-box;height:0;overflow:visible}pre{font-family:monospace,monospace;font-size:1em}a{background-color:transparent}abbr[title]{border-bottom:none;text-decoration:underline;text-decoration:underline dotted}b,strong{font-weight:bolder}code,kbd,samp{font-family:monospace,monospace;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}img{border-style:none}button,input,optgroup,select,textarea{font-family:inherit;font-size:100%;line-height:1.15;margin:0}button,input{overflow:visible}button,select{text-transform:none}[type=button],[type=reset],[type=submit],button{-webkit-appearance:button}[type=button]::-moz-focus-inner,[type=reset]::-moz-focus-inner,[type=submit]::-moz-focus-inner,button::-moz-focus-inner{border-style:none;padding:0}[type=button]:-moz-focusring,[type=reset]:-moz-focusring,[type=submit]:-moz-focusring,button:-moz-focusring{outline:1px dotted ButtonText}fieldset{padding:.35em .75em .625em}legend{box-sizing:border-box;color:inherit;display:table;max-width:100%;padding:0;white-space:normal}progress{vertical-align:baseline}textarea{overflow:auto}[type=checkbox],[type=radio]{box-sizing:border-box;padding:0}[type=number]::-webkit-inner-spin-button,[type=number]::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}[type=search]::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}details{display:block}summary{display:list-item}template{display:none}[hidden]{display:none}
 
-    div.callout, 
-    .content {
-        font-family: 'Merriweather', var(--font-default);
-    }
-    .sidebar {
-        font-family: var(--font-default);
-    }
+  // Water CSS
+  font-family:'Inter',sans-serif;line-height:1.4;max-width:800px;margin:20px auto;padding:0 10px;color:#dbdbdb;background:#202b38;text-rendering:optimizeLegibility;
+  button,input,textarea{transition:background-color .1s linear,border-color .1s linear,color .1s linear,box-shadow .1s linear,transform .1s ease}h1{font-size:2.2em;margin-top:0}h1,h2,h3,h4,h5,h6{margin-bottom:12px}h1,h2,h3,h4,h5,h6,strong{color:#fff}b,h1,h2,h3,h4,h5,h6,strong,th{font-weight:600}blockquote{border-left:4px solid rgba(0,150,191,.67);margin:1.5em 0;padding:.5em 1em;font-style:italic}blockquote>footer{margin-top:10px;font-style:normal}address,blockquote cite{font-style:normal}a[href^=mailto]:before{content:"📧 "}a[href^=tel]:before{content:"📞 "}a[href^=sms]:before{content:"💬 "}button,input[type=button],input[type=checkbox],input[type=submit]{cursor:pointer}input:not([type=checkbox]):not([type=radio]),select{display:block}button,input,select,textarea{color:#fff;background-color:#161f27;font-family:inherit;font-size:inherit;margin-right:6px;margin-bottom:6px;padding:10px;border:none;border-radius:6px;outline:none}button,input:not([type=checkbox]):not([type=radio]),select,textarea{-webkit-appearance:none}textarea{margin-right:0;width:100%;box-sizing:border-box;resize:vertical}button,input[type=button],input[type=submit]{padding-right:30px;padding-left:30px}button:hover,input[type=button]:hover,input[type=submit]:hover{background:#324759}button:focus,input:focus,select:focus,textarea:focus{box-shadow:0 0 0 2px rgba(0,150,191,.67)}button:active,input[type=button]:active,input[type=checkbox]:active,input[type=radio]:active,input[type=submit]:active{transform:translateY(2px)}button:disabled,input:disabled,select:disabled,textarea:disabled{cursor:not-allowed;opacity:.5}::-webkit-input-placeholder{color:#a9a9a9}:-ms-input-placeholder{color:#a9a9a9}::-ms-input-placeholder{color:#a9a9a9}::placeholder{color:#a9a9a9}a{text-decoration:none;color:#41adff}a:hover{text-decoration:underline}code,kbd{background:#161f27;color:#ffbe85;padding:5px;border-radius:6px}pre>code{padding:10px;display:block;overflow-x:auto}img{max-width:100%}hr{border:none;border-top:1px solid #dbdbdb}table{border-collapse:collapse;margin-bottom:10px;width:100%}td,th{padding:6px;text-align:left}th{border-bottom:1px solid #dbdbdb}tbody tr:nth-child(2n){background-color:#161f27}::-webkit-scrollbar{height:10px;width:10px}::-webkit-scrollbar-track{background:#161f27;border-radius:6px}::-webkit-scrollbar-thumb{background:#324759;border-radius:6px}::-webkit-scrollbar-thumb:hover{background:#415c73}
+  
+  font-size: $base-font-size; line-height: $base-line-height;
+  max-width: 900px;
 
-    .markdown-embed > h2,
-    .markdown-embed > h3,
-    .markdown-embed > h4,
-    .markdown-embed > h5,
-    .markdown-embed > h6 {
-        display: none;
-    }
+  @media screen and (min-width: 900px) {
+    font-size: $large-base-font-size;
+  }
+  
+  p, table, iframe { margin-top: 0; margin-bottom: $base-line-height; }
+  
+  //Headers
+  h1, h2, h3, h4, h5, h6 { margin: 0 0 $base-line-height * 0.66 0; clear: both;
+      text-rendering: optimizeLegibility; }
+  h1 { font-size: $h1-font-size; line-height: $h1-font-size * 1.5; }
+  h2 { font-size: $h2-font-size; line-height: $h2-font-size * 1.5; }
+  h3 { font-size: $h3-font-size; line-height: $h3-font-size * 1.5; }
+  h4 { font-size: $h4-font-size; line-height: $h4-font-size * 1.5; }
+  h5, h6 { font-size: $h5-font-size; line-height: $h5-font-size * 1.5; }
+  h6 { font-style: italic; }
+  
+  //lists
+  ul, ol { margin: 0 0 $base-line-height $base-line-height; padding: 0; }
+  ul li ul, ul li ol, ol li ul, ol li ol { margin: 0 0 0 $base-line-height; }
+  
+  //blockquotes
+  blockquote { margin: 0 0 1.5rem 0;
+    border-left: 4px solid rgba($accent-color, 0.5);
+    border-radius: 0 8px 8px 0;
+    padding: 1rem;
+    font-style: normal;
+    color: #dddddd;
+    &:before { display: none; }
+    p { display: block; }
+    p:last-child { margin-bottom: 0; }
+  }
+  blockquote cite { display: block; font-size: 0.75rem; }
 
-    /* Callouts */
-    div.callout {
-        font-size: var(--content-font-size);
-        .callout-title, .callout-icon { 
-            //font-size: 1.5rem; 
-            font-weight: 800;
-        }
-    }
-    #tooltip-content div.callout {
-        font-size: calc(0.8 * var(--content-font-size));
-        .callout-title, .callout-icon { 
-            font-size: calc(0.8 * var(--callout-title-size)); 
-            svg {
-                width: 18px;
-                height: 18px;
-            }
-        }
-    }
-    
-    div.callout[data-callout="garden"] {
-        --callout-icon: sprout;
-         background-color: rgba(68, 207, 110, .2);
-        --callout-color: 68, 207, 110;
-    }
-    div.callout[data-callout="success"] {
-         background-color: rgba(255, 200, 60, .2);
-        --callout-color: 255, 200, 60;
-        --callout-icon: party-popper;
-    }
-    div.callout[data-callout="rmk"] {
-         background-color: rgba(255, 36, 76, 0.2);
-        --callout-icon: alert-triangle;
-        --callout-color: 255, 36, 76;
-    }
-    div.callout[data-callout="ex"] {
-         background-color: rgba(79, 179, 87, 0.2);
-        --callout-color: 79, 179, 87;
-        --callout-icon: book;
-    }
-    div.callout[data-callout="tip"] {
-         background-color: rgba(0, 184, 212, 0.2);
-        --callout-color: 0, 184, 212;
-        --callout-icon: lightbulb;
-    }
+  //links
+  a { color: $accent-color; }
+  // ****** //
 
-    div.callout[data-callout="meta"] { display: none; }
+  // overrides
+  &.markdown-preview-view {
+    padding: 0 20px !important;
+    margin: 0 auto;
+    font-size: $base-font-size;
 
-    .content center > blockquote {
-        margin-left: 0;
-        margin-inline-start: 0;
-        padding-left: 0;
+    @media screen and (min-width: 900px) {
+      font-size: $large-base-font-size;
     }
+  }
+  .search-keys { display: none; }
 
-    // Alternate Checkboxes
-    li:has(>p .alt-check-rmk, > .alt-check-rmk) {
-        --alt-check-color: rgba(var(--rmk-color), 0.2);
-        --alt-check-marker: "❗️";
-    }
-    li:has(>p .alt-check-qn, > .alt-check-qn) {
-        --alt-check-color: rgba(var(--qn-color), 0.2);
-        --alt-check-marker: "❓";
-    }
-    li:has(>p .alt-check-ex, > .alt-check-ex) {
-        --alt-check-color: rgba(var(--ex-color), 0.2);
-        --alt-check-marker: "📗";
-    }
-    li:has(>p .alt-check-impt, > .alt-check-impt) {
-        --alt-check-color: rgba(var(--impt-color), 0.2);
-        --alt-check-marker: "⭐️";
-    }
-    li:has(>p .alt-check-tip, > .alt-check-tip) {
-        --alt-check-color: rgba(var(--tip-color), 0.2);
-        --alt-check-marker: "💡";
-    }
-    li:has(>p .alt-check-oth, > .alt-check-oth) {
-        --alt-check-color: rgba(var(--oth-color), 0.2);
-        --alt-check-marker: "📎";
-    }
-    li:has(>p .alt-check, > .alt-check) {
-        background-color: var(--alt-check-color);
-        padding: 5px;
-        border-radius: 5px;
-        margin-left: -3px;
-    }
-    li:has(>p .alt-check, > .alt-check)::marker {
-        content: var(--alt-check-marker);
-        font-size: 1em;
-    }
+  // Sidebar (backlinks) on bottom
+  .sidebar {
+    // Overrides:
+    position: relative;
+    top: auto;
+    transform: none;
+    right: auto;
+    height: auto;
+    min-width: none;
+    display: block;
+    max-width: none;
 
-    /* Logo */
-    //div.logo {
-        //background: url('https://raw.githubusercontent.com/zcysxy/edav-garden/main/logo.svg');
-    //}
-    //div.logo:hover {
-        //background: url('https://raw.githubusercontent.com/zcysxy/edav-garden/main/logo-3d.png');
-        ////background: url('https://raw.githubusercontent.com/zcysxy/edav-garden/main/logo-garden.svg');
-    //}
-    //div.logo,
-    //div.logo:hover {
-        //background-size: cover;
-        //width: 250px;
-        //height: 250px;
-        //border: none;
-        //box-shadow: none;
-    //}
-    /* Logo */
-    input#logo {
-      height: 0;
-      width: 0;
-      border: none;
-      outline: none;
-      display: none;
-    }
-    //#logo:checked + label .logo {
-        //background: url('https://raw.githubusercontent.com/zcysxy/edav-garden/main/logo.svg');
-        //background-size: cover;
-    //}
-    //#logo + label .logo {
-        //background: transparent;
-    //}
-    .logo-wrapper, 
-    .logo {
-        width: 250px;
-        height: 250px;
-        border: none;
-        box-shadow: none;
-    }
+    margin-bottom: 20px;
+  }
+  .sidebar-container {
+    // Overrides
+    padding-right: 0;
+    overflow-y: initial;
+  }
+  .backlinks {
+    background-color: transparent;
+    padding: 0;
+    margin-top: 0;
+    border-radius: 0;
+    padding: 0;
 
-    .logo-wrapper { position: relative; }
-    .logo-wrapper:before {
-        content: "";
-        position: absolute;
-        left: 0;
-        right: 0;
-        width: 250px;
-        height: 250px;
-        /*background: url('https://raw.githubusercontent.com/zcysxy/edav-garden/main/logo-3d.png');*/
-        //animation: logoChange 0.01s infinite;
-        animation: logoChange 5s infinite, flip 1s infinite;
-        //animation-play-state: paused;
-        background-size: cover;
-    }
-    #logo:checked + label .logo-wrapper:before {
-        animation-play-state: running;
-        background-size: cover;
-        //opacity: 0;
-    }
+    border-top: 1px solid rgba(255,255,255,0.2);
+    padding-top: 6px;
+  }
 
-    @keyframes flip {
-      0% { transform: rotateY(-90deg); -webkit-filter: drop-shadow(0px, 0px, 0px, black) }
-      10% { tranform: rotateY(-10deg); -webkit-filter: drop-shadow(10px, 10px, 10px, black) }
-      50% { transform: rotateY(0deg) }
-      90% { transform: rotateY(10deg) }
-      100% { transform: rotateY(90deg) }
+  // Navbar
+  .navbar {
+    position: relative;
+    padding-left: 0; padding-right: 0;
+    background-color: transparent;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    h1 {
+      margin: 0 15px !important;
     }
+  }
 
-    @keyframes logoChange {
-        0.01%, 20% {
-            background: url('https://raw.githubusercontent.com/zcysxy/edav-garden/main/logo.svg');
-            background-size: cover;
-        }
-        20.01%, 40% {
-            background: url('https://raw.githubusercontent.com/zcysxy/edav-garden/main/logo-3d.png') no-repeat;
-            background-size: cover;
-        }
-        40.01%, 60% {
-            background: url('https://raw.githubusercontent.com/zcysxy/edav-garden/main/logo-garden.svg') no-repeat;
-            background-size: cover;
-        }
-        60.01%, 80% {
-            background: url('https://raw.githubusercontent.com/zcysxy/edav-garden/main/logo-ggplot.svg') no-repeat;
-            background-size: cover;
-        }
-            80.01%, 100% {
-            background: url('https://raw.githubusercontent.com/zcysxy/edav-garden/main/logo-tidy.svg') no-repeat;
-            background-size: cover;
-        }
+  .navbar-inner {
+    a {
+      display: flex;
+      padding: 15px 0;
+      &:hover {
+        text-decoration: underline;
+      }
     }
+    img {
+      display: block;
+      float: left;
+      height: 48px;
+      width: 48px;
+      border-radius: 12px;
+      margin-right: 15px;
+    }
+    h1 {
+      float: left;
+      font-size: 2rem;
+      line-height: 48px;
+    }
+  }
 
-    //.logo-wrapper:hover {
-        //animation: hoverLogo 0.1s forwards;
-        //filter: drop-shadow(0px 10px 10px rgba(0,0,0, 1)) drop-shadow(0px 10px 30px rgba(100,100,100,0.2)) ;
-    //}
-    //@keyframes hoverLogo {
-        //0% { transform: scale(1) translate(0px,0px);}
-        //100% { transform: scale(1.05) translate(0px,-10px);}
-    //}
-    
-    // Popover
-    div#tooltip-wrapper {
-        box-shadow: 0px 2.7px 3.1px rgba(0, 0, 0, 0.081),0px 5.9px 8.7px rgba(0, 0, 0, 0.131),0px 10.4px 18.1px rgba(0, 0, 0, 0.18),0px 20px 40px rgba(0, 0, 0, 0.28);
-        border: 1px solid var(--background-modifier-border);
-        max-width: 600px;
-        max-height: 450px;
-    }
-    div#tooltip-content > div:first-child {
-        display: none;
-    }
-    
-    //toc
-    nav.toc > ol {
-        padding-left: 0;
-        margin: 0;
-    }
-    nav.toc { padding-top: 0; }
+  .search-button {
+    background-color: transparent;
+    margin: 10px 0;
+    border: 1px solid rgba(255,255,255,0.2);
+    min-width: 160px;
+  }
+
+  // Content
+  .content {
+    max-width: none;
+    font-size: inherit;
+    line-height: inherit;
+    margin-top: 0;
+  }
+  .home-link { display: none; }
+  /* .home-link {
+    display: block;
+    float: left;
+    margin: 15px 20px 0 0;
+    font-weight: bold;
+    color: rgba(255,255,255,0.4);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+  }
+  .home-link + h1 { clear: none; } */
+  a.is-unresolved { opacity: 0.6; pointer-events: none; }
+
+  // Tables in content
+  th {
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+  }
+  tbody tr:nth-child(2n) {
+    background-color: rgba(0,0,0,0.2);
+  }
+
+  // Code blocks in content
+  :not(pre)>code[class*=language-], pre[class*=language-] {
+    background: transparent;
+    padding: 0;
+  }
 }
 
+// Site-specific styles
+// HOMEPAGE
+body.theme-dark.notes {
+  @media screen and (min-width: 1024px) {
+    max-width: 80vw !important;
+    // Home Columns
+    .hc {
+      @include _fg(2 1, 48px);
+      margin-bottom: 24px;
+      > :nth-child(2n+2) {
+        background: rgba(255,255,255,0.1);
+        border-radius: 8px;
+        padding: 24px;
+      }
+    }
+  }
+  #hello { text-align: center; }
+
+  .content img {
+    border-radius: 8px;
+  }
+
+  // Image streams on homepage
+  .is {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: start;
+    .is__item { margin-right: 20px; margin-bottom: 20px; width: calc(33.33% - 14px);
+      &:nth-of-type(3n) {
+        margin-right: 0;
+      }
+    }
+    .is__item a { display: block; }
+    .is__item img {
+      display: block;
+    }
+  }
+
+  #bookwyrm-reading .is {
+    .is__item { width: auto; }
+    .is__item img { height: 200px; }
+  }
+
+  .book-covers {
+    ul {
+      margin-left: 0;
+      list-style-type: none;
+      li {
+        display: inline-block;
+        margin-right: 12px;
+        img {
+          height: 200px;
+        }
+      }
+    }
+  }
+}
+
+// Popups
+// #tooltip-wrapper {
+//   background: darken(#202b38, 10);
+//   padding: 1em;
+//   border-radius: 4px;
+//   overflow: hidden;
+//   position: absolute;
+//   width: 80%;
+//   max-width: 400px;
+//   height: auto;
+//   max-height: 300px;
+//   font-size: 0.8em;
+//   box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+//   opacity: 0;
+//   transition: opacity 100ms;
+//   unicode-bidi: plaintext;
+//   overflow-y: scroll;
+// }
+
+// #tooltip-wrapper:after {
+//   content: "";
+//   position: absolute;
+//   z-index: 1;
+//   bottom: 0;
+//   left: 0;
+//   pointer-events: none;
+//   width: 100%;
+//   unicode-bidi: plaintext;
+//   height: 75px;
+// }
+
+// Buttons
+h3 small {
+  font-size: 1rem !important;
+  line-height: 1.5rem !important;
+}
+.button {
+  display: inline-block;
+  background: #12b886 !important;
+  color: white !important;
+  font-weight: bold;
+  text-shadow: 0px 1px 3px rgba(0,0,0,0.3);
+  padding: 0 10px !important;
+  border-radius: 3px;
+}
